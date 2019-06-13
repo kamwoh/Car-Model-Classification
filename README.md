@@ -179,6 +179,7 @@ python prune.py --help
 
 #### Train
 ```
+python train.py --version 2 --arch resnet34 --imgsize 400 --epochs 60
 python train.py --version 2 --arch resnext50 --imgsize 400 --epochs 60
 python train.py --version 2 --arch mobilenetv2 --imgsize 224 --epochs 60
 ```
