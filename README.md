@@ -135,7 +135,7 @@ The table above shown **test accuracy** after weight pruning on MobileNetV2 usin
 
 ## Usage
 
-Only ResNeXt50 V2 are uploaded in this repository.
+Only ResNeXt50 V2 are uploaded in this repository. Test accuracy: Car Model (94.07%), Car Make (97.71%), Car Type (97.72%).
 
 #### Requirements
 
