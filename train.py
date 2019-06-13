@@ -1,274 +1,272 @@
-<!DOCTYPE HTML>
-<html>
+import argparse
+import json
+import os
+import time
 
-<head>
-    <meta charset="utf-8">
+import pandas as pd
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+import torchvision
 
-    <title>train.py (editing)</title>
-    <link id="favicon" rel="shortcut icon" type="image/x-icon" href="/static/base/images/favicon-file.ico?v=e2776a7f45692c839d6eea7d7ff6f3b2">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel="stylesheet" href="/static/components/jquery-ui/themes/smoothness/jquery-ui.min.css?v=3c2a865c832a1322285c55c6ed99abb2" type="text/css" />
-    <link rel="stylesheet" href="/static/components/jquery-typeahead/dist/jquery.typeahead.min.css?v=7afb461de36accb1aa133a1710f5bc56" type="text/css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    
-<link rel="stylesheet" href="/static/components/codemirror/lib/codemirror.css?v=288352df06a67ee35003b0981da414ac">
-<link rel="stylesheet" href="/static/components/codemirror/addon/dialog/dialog.css?v=c89dce10b44d2882a024e7befc2b63f5">
-
-    <link rel="stylesheet" href="/static/style/style.min.css?v=56cad67b8b1ff3ed9b48850e9efcffb3" type="text/css"/>
-    
-
-    <link rel="stylesheet" href="/custom/custom.css" type="text/css" />
-    <script src="/static/components/es6-promise/promise.min.js?v=f004a16cb856e0ff11781d01ec5ca8fe" type="text/javascript" charset="utf-8"></script>
-    <script src="/static/components/preact/index.js?v=00a2fac73c670ce39ac53d26640eb542" type="text/javascript"></script>
-    <script src="/static/components/proptypes/index.js?v=c40890eb04df9811fcc4d47e53a29604" type="text/javascript"></script>
-    <script src="/static/components/preact-compat/index.js?v=aea8f6660e54b18ace8d84a9b9654c1c" type="text/javascript"></script>
-    <script src="/static/components/requirejs/require.js?v=951f856e81496aaeec2e71a1c2c0d51f" type="text/javascript" charset="utf-8"></script>
-    <script>
-      require.config({
-          
-          urlArgs: "v=20190602221053",
-          
-          baseUrl: '/static/',
-          paths: {
-            'auth/js/main': 'auth/js/main.min',
-            custom : '/custom',
-            nbextensions : '/nbextensions',
-            kernelspecs : '/kernelspecs',
-            underscore : 'components/underscore/underscore-min',
-            backbone : 'components/backbone/backbone-min',
-            jed: 'components/jed/jed',
-            jquery: 'components/jquery/jquery.min',
-            json: 'components/requirejs-plugins/src/json',
-            text: 'components/requirejs-text/text',
-            bootstrap: 'components/bootstrap/dist/js/bootstrap.min',
-            bootstraptour: 'components/bootstrap-tour/build/js/bootstrap-tour.min',
-            'jquery-ui': 'components/jquery-ui/jquery-ui.min',
-            moment: 'components/moment/min/moment-with-locales',
-            codemirror: 'components/codemirror',
-            termjs: 'components/xterm.js/xterm',
-            typeahead: 'components/jquery-typeahead/dist/jquery.typeahead.min',
-          },
-          map: { // for backward compatibility
-              "*": {
-                  "jqueryui": "jquery-ui",
-              }
-          },
-          shim: {
-            typeahead: {
-              deps: ["jquery"],
-              exports: "typeahead"
-            },
-            underscore: {
-              exports: '_'
-            },
-            backbone: {
-              deps: ["underscore", "jquery"],
-              exports: "Backbone"
-            },
-            bootstrap: {
-              deps: ["jquery"],
-              exports: "bootstrap"
-            },
-            bootstraptour: {
-              deps: ["bootstrap"],
-              exports: "Tour"
-            },
-            "jquery-ui": {
-              deps: ["jquery"],
-              exports: "$"
-            }
-          },
-          waitSeconds: 30,
-      });
-
-      require.config({
-          map: {
-              '*':{
-                'contents': 'services/contents',
-              }
-          }
-      });
-
-      // error-catching custom.js shim.
-      define("custom", function (require, exports, module) {
-          try {
-              var custom = require('custom/custom');
-              console.debug('loaded custom.js');
-              return custom;
-          } catch (e) {
-              console.error("error loading custom.js", e);
-              return {};
-          }
-      })
-
-    document.nbjs_translations = {"domain": "nbjs", "locale_data": {"nbjs": {"": {"domain": "nbjs"}}}};
-    document.documentElement.lang = navigator.language.toLowerCase();
-    </script>
-
-    
-    
-
-</head>
-
-<body class="edit_app "
- 
-data-base-url="/"
-data-file-path="cars/train.py"
-
-  
-    data-jupyter-api-token="83cfa281be5d77f2d437dffd1b27bc6a056e3a0c0598fd58"
-  
- 
-
-dir="ltr">
-
-<noscript>
-    <div id='noscript'>
-      Jupyter Notebook requires JavaScript.<br>
-      Please enable it to proceed. 
-  </div>
-</noscript>
-
-<div id="header">
-  <div id="header-container" class="container">
-  <div id="ipython_notebook" class="nav navbar-brand"><a href="/tree?token=83cfa281be5d77f2d437dffd1b27bc6a056e3a0c0598fd58" title='dashboard'>
-      <img src='/static/base/images/logo.png?v=641991992878ee24c6f3826e81054a0f' alt='Jupyter Notebook'/>
-  </a></div>
-
-  
-
-<span id="save_widget" class="pull-left save_widget">
-    <span class="filename"></span>
-    <span class="last_modified"></span>
-</span>
+from datasets import load_class_names, prepare_loader, separate_class
+from models import construct_model
+from models.network_v1 import NetworkV1, NetworkV2
+from test import test_v1, test_v2
 
 
-  
-  
-  
-  
+def train_v2(ep, model, optimizer, lr_scheduler, train_loader, device, config):
+    lr_scheduler.step()
+    model.train()
 
-    <span id="login_widget">
-      
-        <button id="logout" class="btn btn-sm navbar-btn">Logout</button>
-      
-    </span>
+    loss_meter = 0
+    acc_meter = 0
+    make_acc_meter = 0
+    type_acc_meter = 0
 
-  
+    i = 0
 
-  
-  
-  </div>
-  <div class="header-bar"></div>
+    start_time = time.time()
+    elapsed = 0
 
-  
+    for data, target, make_target, type_target in train_loader:
+        data = data.to(device)
+        target = target.to(device)
+        make_target = make_target.to(device)
+        type_target = type_target.to(device)
 
-<div id="menubar-container" class="container">
-  <div id="menubar">
-    <div id="menus" class="navbar navbar-default" role="navigation">
-      <div class="container-fluid">
-          <p  class="navbar-text indicator_area">
-          <span id="current-mode" >current mode</span>
-          </p>
-        <button type="button" class="btn btn-default navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-          <i class="fa fa-bars"></i>
-          <span class="navbar-text">Menu</span>
-        </button>
-        <ul class="nav navbar-nav navbar-right">
-          <li id="notification_area"></li>
-        </ul>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">File</a>
-              <ul id="file-menu" class="dropdown-menu">
-                <li id="new-file"><a href="#">New</a></li>
-                <li id="save-file"><a href="#">Save</a></li>
-                <li id="rename-file"><a href="#">Rename</a></li>
-                <li id="download-file"><a href="#">Download</a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Edit</a>
-              <ul id="edit-menu" class="dropdown-menu">
-                <li id="menu-find"><a href="#">Find</a></li>
-                <li id="menu-replace"><a href="#">Find &amp; Replace</a></li>
-                <li class="divider"></li>
-                <li class="dropdown-header">Key Map</li>
-                <li id="menu-keymap-default"><a href="#">Default<i class="fa"></i></a></li>
-                <li id="menu-keymap-sublime"><a href="#">Sublime Text<i class="fa"></i></a></li>
-                <li id="menu-keymap-vim"><a href="#">Vim<i class="fa"></i></a></li>
-                <li id="menu-keymap-emacs"><a href="#">emacs<i class="fa"></i></a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">View</a>
-              <ul id="view-menu" class="dropdown-menu">
-              <li id="toggle_header" title="Show/Hide the logo and notebook title (above menu bar)">
-              <a href="#">Toggle Header</a></li>
-              <li id="menu-line-numbers"><a href="#">Toggle Line Numbers</a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Language</a>
-              <ul id="mode-menu" class="dropdown-menu">
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+        optimizer.zero_grad()
 
-<div class="lower-header-bar"></div>
+        pred, make_pred, type_pred = model(data)
 
+        loss_main = F.cross_entropy(pred, target)
+        loss_make = F.cross_entropy(make_pred, make_target)
+        loss_type = F.cross_entropy(type_pred, type_target)
 
-</div>
+        loss = loss_main + config['make_loss'] * loss_make + config['type_loss'] * loss_type
+        loss.backward()
 
-<div id="site">
+        optimizer.step()
 
+        acc = pred.max(1)[1].eq(target).float().mean()
+        make_acc = make_pred.max(1)[1].eq(make_target).float().mean()
+        type_acc = type_pred.max(1)[1].eq(type_target).float().mean()
 
-<div id="texteditor-backdrop">
-<div id="texteditor-container" class="container"></div>
-</div>
+        loss_meter += loss.item()
+        acc_meter += acc.item()
+        make_acc_meter += make_acc.item()
+        type_acc_meter += type_acc.item()
 
+        i += 1
+        elapsed = time.time() - start_time
 
-</div>
+        print(f'Epoch {ep:03d} [{i}/{len(train_loader)}]: '
+              f'Loss: {loss_meter / i:.4f} '
+              f'Acc: {acc_meter / i:.4f} '
+              f'Make: {make_acc_meter / i:.4f} '
+              f'Type: {type_acc_meter / i:.4f} '
+              f'({elapsed:.2f}s)', end='\r')
 
+    print()
+    loss_meter /= len(train_loader)
+    acc_meter /= len(train_loader)
+    make_acc_meter /= len(train_loader)
+    type_acc_meter /= len(train_loader)
 
-
-
-
-
-    
-
-
-<script src="/static/edit/js/main.min.js?v=d52f7cc935e2b6bf0a01c88ae4487399" type="text/javascript" charset="utf-8"></script>
-
-
-<script type='text/javascript'>
-  function _remove_token_from_url() {
-    if (window.location.search.length <= 1) {
-      return;
+    trainres = {
+        'train_loss': loss_meter,
+        'train_acc': acc_meter,
+        'train_make_acc': make_acc_meter,
+        'train_type_acc': type_acc_meter,
+        'train_time': elapsed
     }
-    var search_parameters = window.location.search.slice(1).split('&');
-    for (var i = 0; i < search_parameters.length; i++) {
-      if (search_parameters[i].split('=')[0] === 'token') {
-        // remote token from search parameters
-        search_parameters.splice(i, 1);
-        var new_search = '';
-        if (search_parameters.length) {
-          new_search = '?' + search_parameters.join('&');
-        }
-        var new_url = window.location.origin + 
-                      window.location.pathname + 
-                      new_search + 
-                      window.location.hash;
-        window.history.replaceState({}, "", new_url);
-        return;
-      }
-    }
-  }
-  _remove_token_from_url();
-</script>
-</body>
 
-</html>
+    return trainres
+
+
+def train_v1(ep, model, optimizer, lr_scheduler, train_loader, device, config):
+    lr_scheduler.step()
+    model.train()
+
+    loss_meter = 0
+    acc_meter = 0
+    i = 0
+
+    start_time = time.time()
+    elapsed = 0
+
+    for data, target in train_loader:
+        data = data.to(device)
+        target = target.to(device)
+
+        optimizer.zero_grad()
+
+        pred = model(data)
+
+        loss = F.cross_entropy(pred, target)
+        loss.backward()
+
+        optimizer.step()
+
+        acc = pred.max(1)[1].eq(target).float().mean()
+
+        loss_meter += loss.item()
+        acc_meter += acc.item()
+        i += 1
+        elapsed = time.time() - start_time
+
+        print(f'Epoch {ep:03d} [{i}/{len(train_loader)}]: '
+              f'Loss: {loss_meter / i:.4f} '
+              f'Acc: {acc_meter / i:.4f} ({elapsed:.2f}s)', end='\r')
+
+    print()
+    loss_meter /= len(train_loader)
+    acc_meter /= len(train_loader)
+
+    trainres = {
+        'train_loss': loss_meter,
+        'train_acc': acc_meter,
+        'train_time': elapsed
+    }
+
+    return trainres
+
+
+def get_exp_dir(config):
+    exp_dir = f'logs/{config["arch"]}_{config["imgsize"][0]}_{config["epochs"]}_v{config["version"]}'
+
+    if config['finetune']:
+        exp_dir += '_finetune'
+        
+    os.makedirs(exp_dir, exist_ok=True)
+
+    exps = [d for d in os.listdir(exp_dir) if os.path.isdir(os.path.join(exp_dir, d))]
+    files = set(map(int, exps))
+    if len(files):
+        exp_id = min(set(range(1, max(files) + 2)) - files)
+    else:
+        exp_id = 1
+
+    exp_dir = os.path.join(exp_dir, str(exp_id))
+    os.makedirs(exp_dir, exist_ok=True)
+
+    json.dump(config, open(exp_dir + '/config.json', 'w'))
+
+    return exp_dir
+
+
+def load_weight(model, path, device):
+    sd = torch.load(path)
+    model.load_state_dict(sd)
+
+
+def main(args):
+    device = torch.device('cuda')
+
+    config = {
+        'batch_size': args.batch_size,
+        'test_batch_size': args.batch_size,
+        'lr': args.lr,
+        'weight_decay': args.weight_decay,
+        'momentum': args.momentum,
+        'epochs': args.epochs,
+        'imgsize': (args.imgsize, args.imgsize),
+        'arch': args.arch,
+        'version': args.version,
+        'make_loss': args.make_loss,
+        'type_loss': args.type_loss,
+        'finetune': args.finetune,
+        'path': args.path
+    }
+
+    exp_dir = get_exp_dir(config)
+
+    class_names = load_class_names()
+    num_classes = len(class_names)
+    v2_info = separate_class(class_names)
+    num_makes = len(v2_info['make'].unique())
+    num_types = len(v2_info['model_type'].unique())
+
+    model = construct_model(config, num_classes, num_makes, num_types)
+
+    if config['finetune']:
+        load_weight(model, config['path'], device)
+
+    model = model.to(device)
+
+    optimizer = optim.SGD(model.parameters(),
+                          lr=config['lr'],
+                          momentum=config['momentum'],
+                          weight_decay=config['weight_decay'])
+
+    lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
+                                                  [100, 150],
+                                                  gamma=0.1)
+
+    train_loader, test_loader = prepare_loader(config)
+
+    best_acc = 0
+    res = []
+
+    if config['version'] == 1:
+        train_fn = train_v1
+        test_fn = test_v1
+    else:
+        train_fn = train_v2
+        test_fn = test_v2
+
+    for ep in range(1, config['epochs'] + 1):
+        trainres = train_fn(ep, model, optimizer, lr_scheduler, train_loader, device, config)
+        valres = test_fn(model, test_loader, device, config)
+        trainres.update(valres)
+
+        if best_acc < valres['val_acc']:
+            best_acc = valres['val_acc']
+            torch.save(model.state_dict(), exp_dir + '/best.pth')
+
+        res.append(trainres)
+
+    print(f'Best accuracy: {best_acc:.4f}')
+    res = pd.DataFrame(res)
+    res.to_csv(exp_dir + '/history.csv')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Training and finetuning script for Cars classification task')
+
+    # training arg
+    parser.add_argument('--batch-size', default=32, type=int,
+                        help='training batch size (default: 32)')
+    parser.add_argument('--epochs', default=40, type=int,
+                        help='training epochs (default: 40)')
+    parser.add_argument('--arch', default='resnext50', choices=['resnext50',
+                                                                'resnet34',
+                                                                'mobilenetv2'],
+                        help='Architecture (default: resnext50)')
+    parser.add_argument('--imgsize', default=400, type=int,
+                        help='Input image size (default: 400)')
+    parser.add_argument('--version', default=1, type=int, choices=[1, 2],
+                        help='Classification version (default: 1)\n'
+                             '1. Cars Model only\n'
+                             '2. Cars Model + Make + Car Type')
+    parser.add_argument('--finetune', default=False, action='store_true',
+                        help='whether to finetune from 400x400 to 224x224 (default: False)')
+    parser.add_argument('--path',
+                        help='required if it is a finetune task (default: None)')
+
+    # optimizer arg
+    parser.add_argument('--lr', default=0.01, type=float,
+                        help='SGD learning rate (default: 0.01)')
+    parser.add_argument('--weight-decay', default=0.0001, type=float,
+                        help='SGD weight decay (default: 0.0001)')
+    parser.add_argument('--momentum', default=0.9, type=float,
+                        help='SGD momentum (default: 0.9)')
+
+    # multi-task learning arg
+    parser.add_argument('--make-loss', default=0.2, type=float,
+                        help='loss$_{make}$ lambda')
+    parser.add_argument('--type-loss', default=0.2, type=float,
+                        help='loss$_{type}$ lambda')
+
+    args = parser.parse_args()
+    main(args)
