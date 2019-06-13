@@ -39,15 +39,15 @@ This is inspired from [YOLO9000](https://arxiv.org/abs/1612.08242), which they w
 
 The following equation is my final loss objective function in this solution:
 
-loss$_{obj}$ = loss$_{model}$ + $\lambda_{type}$ * loss$_{type}$ + $\lambda_{make}$ * loss$_{make}$
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;loss$_{obj}$=loss$_{model}$+$\lambda_{type}$*loss$_{type}$+$\lambda_{make}$*loss$_{make}$" />
 
 ![alt arch](imgs/arch.png "MTL Architecture")
 
-From the figure above, using output of base model and connect with two fully connected layers, one for Car Type (fc$_{type}$) and one for Make (fc$_{make}$), then both of them are served as extra information to compute fc$_{model}$.
+From the figure above, using output of base model and connect with two fully connected layers, one for `Car Type` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" />) and one for `Car Make` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" />), then both of them are served as extra information to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />.
 
 The motivation is because I hope that `Car Type` and `Car Make` can act as a prior information to help improving in recognizing `Car Model`. As a result, it has been proven this solution can help improving score by at least 0.1%. Even though it is a minor improvement, the model can classify `Car Type` and `Car Make` **at the same time**. 
 
-Theorectically, without using this scheme, we can extract `Car Make` and `Car Type` from fc$_{model}$, however, it is troublesome, and it is more to "programming" instead of Deep Learning.
+Theorectically, without using this scheme, we can extract `Car Make` and `Car Type` from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, however, it is troublesome, and it is more to "programming" instead of Deep Learning.
 
 ## Dataset
 
