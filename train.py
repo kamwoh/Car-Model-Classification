@@ -7,11 +7,9 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision
 
 from datasets import load_class_names, prepare_loader, separate_class
 from models import construct_model
-from models.network_v1 import NetworkV1, NetworkV2
 from test import test_v1, test_v2
 
 
@@ -137,7 +135,7 @@ def get_exp_dir(config):
 
     if config['finetune']:
         exp_dir += '_finetune'
-        
+
     os.makedirs(exp_dir, exist_ok=True)
 
     exps = [d for d in os.listdir(exp_dir) if os.path.isdir(os.path.join(exp_dir, d))]
@@ -211,7 +209,7 @@ def main(args):
     if config['version'] == 1:
         train_fn = train_v1
         test_fn = test_v1
-    else:
+    else:  # 2 and 3
         train_fn = train_v2
         test_fn = test_v2
 
@@ -245,7 +243,7 @@ if __name__ == '__main__':
                         help='Architecture (default: resnext50)')
     parser.add_argument('--imgsize', default=400, type=int,
                         help='Input image size (default: 400)')
-    parser.add_argument('--version', default=1, type=int, choices=[1, 2],
+    parser.add_argument('--version', default=1, type=int, choices=[1, 2, 3],
                         help='Classification version (default: 1)\n'
                              '1. Cars Model only\n'
                              '2. Cars Model + Make + Car Type')

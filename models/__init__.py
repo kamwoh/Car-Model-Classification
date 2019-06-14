@@ -1,6 +1,8 @@
 import torchvision
 
-from models.network_v1 import NetworkV1, NetworkV2
+from models.network_v1 import NetworkV1
+from models.network_v2 import NetworkV2
+from models.network_v3 import NetworkV3
 
 
 def construct_model(config, num_classes, num_makes, num_types):
@@ -13,7 +15,9 @@ def construct_model(config, num_classes, num_makes, num_types):
 
     if config['version'] == 1:
         model = NetworkV1(base, num_classes)
-    else:
+    elif config['version'] == 2:
         model = NetworkV2(base, num_classes, num_makes, num_types)
+    else:
+        model = NetworkV3(base, num_classes, num_makes, num_types)
 
     return model

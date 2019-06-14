@@ -1,8 +1,7 @@
-import torch
 import torch.nn as nn
 
 
-class NetworkV2(nn.Module):
+class NetworkV3(nn.Module):
     def __init__(self, base, num_classes, num_makes, num_types):
         super().__init__()
         self.base = base
@@ -16,27 +15,25 @@ class NetworkV2(nn.Module):
 
         self.brand_fc = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(in_features, num_makes)
+            nn.ReLU(),
+            nn.Linear(num_classes, num_makes)
         )
 
         self.type_fc = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(in_features, num_types)
+            nn.ReLU(),
+            nn.Linear(num_classes, num_types)
         )
 
         self.class_fc = nn.Sequential(
             nn.Dropout(0.2),
-            nn.ReLU(),
-            nn.Linear(in_features + num_makes + num_types, num_classes)
+            nn.Linear(in_features, num_classes)
         )
 
     def forward(self, x):
         out = self.base(x)
-        brand_fc = self.brand_fc(out)
-        type_fc = self.type_fc(out)
-
-        concat = torch.cat([out, brand_fc, type_fc], dim=1)
-
-        fc = self.class_fc(concat)
+        fc = self.class_fc(out)
+        brand_fc = self.brand_fc(fc)
+        type_fc = self.type_fc(fc)
 
         return fc, brand_fc, type_fc
