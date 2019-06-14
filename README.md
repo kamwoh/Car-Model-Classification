@@ -51,7 +51,7 @@ Theorectically, without using this scheme, we can extract `Car Make` and `Car Ty
 
 However, using this scheme, performance increased could be due to number of parameters increased to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, therefore, I made a better version, which has shown in the figure below.
 
-![alt arch2](imgs/arch.png "MTL Architecture v2")
+![alt arch2](imgs/arch2.png "MTL Architecture v2")
 
 Number of parameters to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" /> remained, while error propagated from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" /> and <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" /> flowed into <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, and hence extra gradient information to update weights. As a result, performance is improved. This is also similar to Inception V1 (GoogLeNet), which they performed intermediate softmax branches at the middle.
 
@@ -224,7 +224,7 @@ python prune.py --config logs/resnext50_400_60_v2/1/config.json --prune-all
 
 ## Notes
 
-1. Due to resource constraint, experiment on V3 only performed using ResNeXt50.
+1. Experiment on V3 only performed using ResNeXt50.
 
 ## Reference
 
