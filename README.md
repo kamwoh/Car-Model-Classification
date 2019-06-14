@@ -33,7 +33,7 @@ Reference: https://pytorch.org/docs/stable/torchvision/models.html
 ##### Version
 
 1. Version 1 - train on Car Model classification task only (196 classes).
-2. Version 2 - MTL version, train on Car Model (196 classes), Car Type (18 classes) and Car Make (49 classes) classification tasks.
+2. Version 2, 3 - MTL version, train on Car Model (196 classes), Car Type (18 classes) and Car Make (49 classes) classification tasks.
 
 This is inspired from [YOLO9000](https://arxiv.org/abs/1612.08242), which they were using WordNet concept for Object Detection over 9000 classes.
 
@@ -41,13 +41,19 @@ The following equation is my final loss objective function in this solution:
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;loss$_{obj}$=loss$_{model}$+$\lambda_{type}$*loss$_{type}$+$\lambda_{make}$*loss$_{make}$" />
 
-![alt arch](imgs/arch.png "MTL Architecture")
+![alt arch](imgs/arch.png "MTL Architecture v1")
 
 From the figure above, using output of base model and connect with two fully connected layers, one for `Car Type` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" />) and one for `Car Make` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" />), then both of them are served as extra information to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />.
 
 The motivation is because I hope that `Car Type` and `Car Make` can act as a prior information to help improving in recognizing `Car Model`. As a result, it has been proven this solution can help improving score by at least 0.1%. Even though it is a minor improvement, the model can classify `Car Type` and `Car Make` **at the same time**. 
 
 Theorectically, without using this scheme, we can extract `Car Make` and `Car Type` from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, however, it is troublesome, and it is more to "programming" instead of Deep Learning.
+
+However, using this scheme, performance increased could be due to number of parameters increased to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, therefore, I made a better version, which has shown in the figure below.
+
+![alt arch2](imgs/arch.png "MTL Architecture v2")
+
+Number of parameters to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" /> remained, while error propagated from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" /> and <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" /> flowed into <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, and hence extra gradient information to update weights. As a result, performance is improved. This is also similar to Inception V1 (GoogLeNet), which they performed intermediate softmax branches at the middle.
 
 ## Dataset
 
@@ -99,8 +105,9 @@ Car Type:
 | -                   |      -     |    2    |   91.10   |
 | -                   |     400    |    1    |   93.96   |
 | -                   |      -     |    2    |   94.07   |
+| -                   |      -     |    3    |   94.03   |
 
-The table above shown **test accuracy** of different architecture and image size on Version 1 and 2 for `Car Model`. Using MTL training scheme on ResNet34 with image size of 400, performance is improved by 0.27% from 92.14% to 92.41% which has been proven that prior information of `Car Make` and `Car Type` are useful for final prediction of `Car Model`, not only on baseline but performance on other architecture and image size also have shown improvement by at least 0.1% except for MobileNetV2 with image size of 400. By using state-of-the-art deep architecture ResNeXt50, the performance is even improved by 1.66% on Version 2 tasks and it is the best performance among all settings.
+The table above shown **test accuracy** of different architecture and image size on Version 1 and 2 for `Car Model`. Using MTL training scheme on ResNet34 with image size of 400, performance is improved by 0.27% from 92.14% to 92.41% which has been proven that prior information of `Car Make` and `Car Type` are useful for final prediction of `Car Model`, not only on baseline but performance on other architecture and image size also have shown improvement by at least 0.1% except for MobileNetV2 with image size of 400. By using state-of-the-art deep architecture ResNeXt50, the performance is even improved by 1.66% and 1.62% on Version 2 and 3 tasks respectively and it is the best performance among all settings.
 
 In terms of compression by using MobileNetV2, the performance on both Version 1 and 2 are only deteriorated by around 1% while 10x smaller size than ResNet34 and ResNeXt50. However, using lower resolution of image size of 224, the performance on both Version 1 and 2 are dropped to 87.30% and 88.01% respectively.
 
@@ -110,12 +117,13 @@ In terms of compression by using MobileNetV2, the performance on both Version 1 
 | -            |     400    |   96.29  |   96.65  |
 | MobileNetV2  |     224    |   92.65  |   93.58  |
 | -            |     400    |   95.21  |   95.57  |
-| ResNeXt50    |     224    |   95.63  |   96.11  |
+| ResNeXt50 V2 |     224    |   95.63  |   96.11  |
 | -            |     400    |   97.71  |   97.72  |
+| ResNeXt50 V3 |     400    |   97.57  |   97.44  |
 
-The table above shown **test accuracy** of different architecture and image size on Version 2 for `Car Make` and `Car Type`.
+The table above shown **test accuracy** of different architecture and image size on Version 2 and 3 for `Car Make` and `Car Type`.
 
-Classification of `Car Make` and `Car Type` using ResNeXt50 with image size of 400, it has the best performance with 97.71% and 97.72% respectively.
+Classification of `Car Make` and `Car Type` using ResNeXt50 V2 with image size of 400, it has the best performance with 97.71% and 97.72% respectively. While on V3 with lesser number of parameters has slightly lower performance which is 97.51% and 97.48% on `Car Make` and `Car Type` respectively.
 
 
 ### Weight Pruning
@@ -135,7 +143,11 @@ The table above shown **test accuracy** after weight pruning on MobileNetV2 usin
 
 ## Usage
 
-Only ResNeXt50 V2 are uploaded in this repository. Test accuracy: Car Model (94.07%), Car Make (97.71%), Car Type (97.72%).
+Only ResNeXt50 V2 and V3 are uploaded in this repository. 
+
+Test accuracy ResNeXt50 V2: Car Model (94.07%), Car Make (97.71%), Car Type (97.72%).
+
+Test accuracy ResNeXt50 V3: Car Model (94.03%), Car Make (97.51%), Car Type (97.48%)
 
 #### Requirements
 
@@ -209,6 +221,10 @@ python prune.py --config logs/resnext50_400_60_v2/1/config.json --prune-all
 1. Better deep architecture can yield better performance. 
 2. Higher resolution can yield better performance.
 3. Multi-task learning can improve model performance, also can perform related tasks by the same model.
+
+## Notes
+
+1. Due to resource constraint, experiment on V3 only performed using ResNeXt50.
 
 ## Reference
 
