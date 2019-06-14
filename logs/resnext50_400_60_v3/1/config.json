@@ -1,0 +1,1 @@
+{"batch_size": 30, "test_batch_size": 30, "lr": 0.01, "weight_decay": 0.0001, "momentum": 0.9, "epochs": 60, "imgsize": [400, 400], "arch": "resnext50", "version": 3, "make_loss": 0.2, "type_loss": 0.2, "finetune": false, "path": null}
