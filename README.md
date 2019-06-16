@@ -157,8 +157,6 @@ Test accuracy ResNeXt50 V3: Car Model (94.03%), Car Make (97.51%), Car Type (97.
 4. numpy
 5. pandas
 
-Dependency can install from `requirements.txt` by `pip install -r requirements.txt`
-
 #### Dataset processing
 
 If using [Stanford Cars dataset](https://ai.stanford.edu/~jkrause/cars/car_dataset.html):
