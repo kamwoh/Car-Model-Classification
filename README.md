@@ -224,7 +224,9 @@ python prune.py --config logs/resnext50_400_60_v2/1/config.json --prune-all
 
 ## Notes
 
-1. Experiment on V3 only performed using ResNeXt50.
+1. All experiments are performed by 1 run only.
+2. Experiment on V3 only performed using ResNeXt50.
+3. Tuning hyperparameter might improve the performance.
 
 ## Reference
 
