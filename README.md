@@ -39,7 +39,7 @@ This is inspired from [YOLO9000](https://arxiv.org/abs/1612.08242), which they w
 
 The following equation is my final loss objective function in this solution:
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;loss$_{obj}$=loss$_{model}$+$\lambda_{type}$*loss$_{type}$+$\lambda_{make}$*loss$_{make}$" />
+L_obj = L_model + lambda_type * L_type + lambda_make * L_make
 
 ![alt arch](imgs/arch.png "MTL Architecture v1")
 
