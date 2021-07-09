@@ -39,21 +39,21 @@ This is inspired from [YOLO9000](https://arxiv.org/abs/1612.08242), which they w
 
 The following equation is my final loss objective function in this solution:
 
-L_obj = L_model + lambda_type * L_type + lambda_make * L_make
+````L_obj = L_model + lambda_type * L_type + lambda_make * L_make```
 
 ![alt arch](imgs/arch.png "MTL Architecture v1")
 
-From the figure above, using output of base model and connect with two fully connected layers, one for `Car Type` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" />) and one for `Car Make` (<img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" />), then both of them are served as extra information to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />.
+From the figure above, using output of base model and connect with two fully connected layers, one for `Car Type` (`fc_type`) and one for `Car Make` (`fc_make`), then both of them are served as extra information to compute `fc_model`.
 
 The motivation is because I hope that `Car Type` and `Car Make` can act as a prior information to help improving in recognizing `Car Model`. As a result, it has been proven this solution can help improving score by at least 0.1%. Even though it is a minor improvement, the model can classify `Car Type` and `Car Make` **at the same time**. 
 
-Theorectically, without using this scheme, we can extract `Car Make` and `Car Type` from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, however, it is troublesome, and it is more to "programming" instead of Deep Learning.
+Theorectically, without using this scheme, we can extract `Car Make` and `Car Type` from fc_model, however, it is troublesome, and it is more to "programming" instead of Deep Learning.
 
-However, using this scheme, performance increased could be due to number of parameters increased to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, therefore, I made a better version, which has shown in the figure below.
+However, using this scheme, performance increased could be due to number of parameters increased to compute `fc_model`, therefore, I made a better version, which has shown in the figure below.
 
 ![alt arch2](imgs/arch2.png "MTL Architecture v2")
 
-Number of parameters to compute <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" /> remained, while error propagated from <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{make}$" /> and <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{type}$" /> flowed into <img src="https://latex.codecogs.com/svg.latex?\Large&space;fc$_{model}$" />, and hence extra gradient information to update weights. As a result, performance is improved. This is also similar to Inception V1 (GoogLeNet), which they performed intermediate softmax branches at the middle.
+Number of parameters to compute `fc_model` remained, while error propagated from `fc_make` and `fc_type` flowed into `fc_model`, and hence extra gradient information to update weights. As a result, performance is improved. This is also similar to Inception V1 (GoogLeNet), which they performed intermediate softmax branches at the middle.
 
 ## Dataset
 
