@@ -1,16 +1,8 @@
 import argparse
 import json
-import os
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-import time
-import numpy as np
-
-from datasets import load_class_names, separate_class, prepare_loader
+from datasets import load_class_names, separate_class
 from models import construct_model
+
 
 def main(args):
     config = json.load(open(args.config))

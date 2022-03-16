@@ -1,38 +1,31 @@
 import os
 
 import pandas as pd
-import scipy.io
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 
-def load_anno(path):
-    mat = scipy.io.loadmat(path)
-    return mat
-
-
-def load_class_names(path='data/devkit/cars_meta.mat'):
-    cn = load_anno(path)['class_names']
-    cn = cn.tolist()[0]
-    cn = [str(c[0].item()) for c in cn]
+def load_class_names(path='data/devkit/class_names.csv'):
+    cn = pd.read_csv(path, header=None).values.reshape(-1)
+    cn = cn.tolist()
     return cn
 
 
 def load_annotations_v1(path):
-    ann = load_anno(path)['annotations'][0]
+    ann = pd.read_csv(path, header=None).values
     ret = {}
 
     for idx in range(len(ann)):
         x1, y1, x2, y2, target, imgfn = ann[idx]
 
         r = {
-            'x1': x1.item(),
-            'y1': y1.item(),
-            'x2': x2.item(),
-            'y2': y2.item(),
-            'target': target.item() - 1,
-            'filename': imgfn.item()
+            'x1': x1,
+            'y1': y1,
+            'x2': x2,
+            'y2': y2,
+            'target': target - 1,
+            'filename': imgfn
         }
 
         ret[idx] = r
@@ -41,7 +34,7 @@ def load_annotations_v1(path):
 
 
 def load_annotations_v2(path, v2_info):
-    ann = load_anno(path)['annotations'][0]
+    ann = pd.read_csv(path, header=None).values
     ret = {}
     make_codes = v2_info['make'].astype('category').cat.codes
     type_codes = v2_info['model_type'].astype('category').cat.codes
@@ -50,14 +43,14 @@ def load_annotations_v2(path, v2_info):
         x1, y1, x2, y2, target, imgfn = ann[idx]
 
         r = {
-            'x1': x1.item(),
-            'y1': y1.item(),
-            'x2': x2.item(),
-            'y2': y2.item(),
-            'target': target.item() - 1,
-            'make_target': make_codes[target.item() - 1].item(),
-            'type_target': type_codes[target.item() - 1].item(),
-            'filename': imgfn.item()
+            'x1': x1,
+            'y1': y1,
+            'x2': x2,
+            'y2': y2,
+            'target': target - 1,
+            'make_target': make_codes[target - 1].item(),
+            'type_target': type_codes[target - 1].item(),
+            'filename': imgfn
         }
 
         ret[idx] = r
@@ -117,11 +110,11 @@ class CarsDatasetV1(Dataset):
             img = Image.open(os.path.join(self.imgdir, fn))
             img = img.convert('RGB')
             img = self.resize(img)
-            
+
             self.cache[idx] = img
         else:
             img = self.cache[idx]
-        
+
         img = self.transform(img)
 
         return img, target
@@ -153,11 +146,11 @@ class CarsDatasetV2(Dataset):
             img = Image.open(os.path.join(self.imgdir, fn))
             img = img.convert('RGB')
             img = self.resize(img)
-            
+
             self.cache[idx] = img
         else:
             img = self.cache[idx]
-        
+
         img = self.transform(img)
 
         return img, target, make_target, type_target
@@ -167,8 +160,8 @@ def prepare_loader(config):
     train_imgdir = 'data/cars_train'
     test_imgdir = 'data/cars_test'
 
-    train_annopath = 'data/devkit/cars_train_annos.mat'
-    test_annopath = 'data/devkit/cars_test_annos_withlabels.mat'
+    train_annopath = 'data/devkit/cars_train_annos.csv'
+    test_annopath = 'data/devkit/cars_test_annos_withlabels.csv'
 
     train_transform = transforms.Compose(
         [

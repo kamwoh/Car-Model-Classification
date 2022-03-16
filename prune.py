@@ -4,10 +4,6 @@ import os
 import pandas as pd
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-import time
 import numpy as np
 
 from datasets import load_class_names, separate_class, prepare_loader
@@ -30,12 +26,12 @@ def prune(model, pruning_perc):
 
 
 def load_weight(model, path, device):
-    sd = torch.load(path)
+    sd = torch.load(path, map_location=device)
     model.load_state_dict(sd)
 
 
 def main(args):
-    device = torch.device('cuda')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config = json.load(open(args.config))
 
     exp_dir = os.path.dirname(args.config)
@@ -48,7 +44,7 @@ def main(args):
     num_types = len(v2_info['model_type'].unique())
     train_loader, test_loader = prepare_loader(config)
     model = construct_model(config, num_classes, num_makes, num_types)
-    
+
     def _prune(model, rate, save=True):
         print(f'Pruning rate: {rate:.2f}')
         load_weight(model, modelpath, device)
@@ -68,17 +64,17 @@ def main(args):
             os.makedirs(savefndir, exist_ok=True)
 
             torch.save(model.state_dict(), args.savefn)
-        
+
         return res
-    
+
     hist = []
-    
+
     if args.prune_all:
         for rate in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
             hist.append(_prune(model, rate * 100, save=False))
     else:
         hist.append(_prune(model, args.prune_rate * 100))
-    
+
     hist = pd.DataFrame(hist)
     hist.to_csv(exp_dir + '/prune.csv')
 
@@ -88,7 +84,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--config', required=True,
                         help='path to config file')
-    parser.add_argument('--prune-rate', type=float, default=0.1, 
+    parser.add_argument('--prune-rate', type=float, default=0.1,
                         help='pruning rate from 0~1')
     parser.add_argument('--prune-all', action='store_true', default=False,
                         help='whether to prune from 0.1 to 0.9')
