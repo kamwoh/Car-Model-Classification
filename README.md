@@ -163,8 +163,8 @@ If using [Stanford Cars dataset](https://ai.stanford.edu/~jkrause/cars/car_datas
 
 - Train dataset need to place in `data/cars_train`. 
 - Test dataset need to place in `data/cars_test`. 
-- Train annotation need to place in `data/devkit/cars_train_annos.mat`
-- Test annotation  need to place in `data/devkit/cars_test_annos_withlabels.mat`
+- Train annotation need to place in `data/devkit/cars_train_annos.csv`
+- Test annotation  need to place in `data/devkit/cars_test_annos_withlabels.csv`
 
 `datasets.py` is responsible for loading dataset and data loader for training and testing. Modifying it if necessary.
 
@@ -205,6 +205,12 @@ Image size can be either `224` or `400`, performance is not guarentee if using o
 
 ```
 python test.py --config logs/resnext50_400_40_v2/1/config.json --imgsize 400
+```
+
+#### Predict Car Model, Make and Type on a single image
+
+```
+python predict.py --config logs/resnext50_400_60_v2/1/config.json --imgpath data/cars_test/02022.jpg
 ```
 
 #### Check pruning results

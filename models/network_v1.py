@@ -9,7 +9,7 @@ class NetworkV1(nn.Module):
         if hasattr(base, 'fc'):
             in_features = self.base.fc.in_features
             self.base.fc = nn.Linear(in_features, num_classes)
-        else: # mobile net v2
+        else:  # mobile net v2
             in_features = self.base.last_channel
 
             self.base.classifier = nn.Sequential(
@@ -20,4 +20,3 @@ class NetworkV1(nn.Module):
     def forward(self, x):
         fc = self.base(x)
         return fc
-

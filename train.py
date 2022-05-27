@@ -154,12 +154,12 @@ def get_exp_dir(config):
 
 
 def load_weight(model, path, device):
-    sd = torch.load(path)
+    sd = torch.load(path, map_location=device)
     model.load_state_dict(sd)
 
 
 def main(args):
-    device = torch.device('cuda')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     config = {
         'batch_size': args.batch_size,

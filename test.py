@@ -3,7 +3,6 @@ import json
 import os
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 import time
@@ -128,12 +127,12 @@ def test_v2(model, test_loader, device, config):
 
 
 def load_weight(model, path, device):
-    sd = torch.load(path)
+    sd = torch.load(path, map_location=device)
     model.load_state_dict(sd)
 
 
 def main(args):
-    device = torch.device('cuda')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     config = json.load(open(args.config))
     config['imgsize'] = (args.imgsize, args.imgsize)
@@ -166,7 +165,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--config', required=True,
                         help='path to config.json')
-    parser.add_argument('--imgsize', default=400, type=float,
+    parser.add_argument('--imgsize', default=400, type=int,
                         help='img size for testing (default: 400)')
 
     args = parser.parse_args()
